@@ -1,14 +1,21 @@
 function throttlePromises(limit, arr) {
+    var numCompleted = 0;
     return new Promise(function(resolve) {
         var nextArrIdx = 0;
+        var results = new Array(arr.length)
 
         function run() {
             if (nextArrIdx < arr.length) {
-                console.log(nextArrIdx);
-                arr[nextArrIdx]().then(function () {
-                    run();
+                var thisArrayIdx = nextArrIdx;
+                arr[nextArrIdx]().then(function (result) {
+                    results[thisArrayIdx] = result;
+                    numCompleted += 1;
+                    if (numCompleted == arr.length) {
+                        resolve(results);
+                    } else {
+                        run();
+                    }
                 });
-
                 nextArrIdx += 1
             }
         }
