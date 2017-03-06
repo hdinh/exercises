@@ -12,7 +12,11 @@ function shallowCopy(obj) {
                 copy[k] = obj[k];
         }
         return copy;
+    } else if (typeof(obj) == 'number') {
+        return obj;
     }
+
+    assert(false);
 }
 
 function update(state, commands) {
@@ -20,9 +24,10 @@ function update(state, commands) {
         return state;
     }
 
-    // process any commands now
     if (commands['$set']) {
         return commands['$set'];
+    } else if (commands['$merge']) {
+        return Object.assign(state, commands['$merge']);
     }
 
     var state = shallowCopy(state);
@@ -40,6 +45,8 @@ function update(state, commands) {
             for (v in commands[k]) {
                 Array.prototype.splice.apply(state, commands[k][v])
             }
+        } else if (k == '$apply'){
+            state = commands[k](state)
         } else {
             state[k] = update(state[k], commands[k]);
         }
