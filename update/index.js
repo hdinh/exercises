@@ -1,3 +1,20 @@
+function shallowCopy(obj) {
+    if (obj instanceof Array) {
+        var copy = [];
+        for (var i = 0; i < obj.length; i++) {
+            copy[i] = obj[i];
+        }
+        return copy;
+    } else if (obj instanceof Object) {
+        var copy = {};
+        for (var k in obj) {
+            if (obj.hasOwnProperty(k))
+                copy[k] = obj[k];
+        }
+        return copy;
+    }
+}
+
 function update(state, commands) {
     if (!commands) {
         return state;
@@ -8,16 +25,27 @@ function update(state, commands) {
         return commands['$set'];
     }
 
-    // TODO: cleanup
-    var keys = new Set();
-    for (k in commands) { keys.add(k); }
-    for (k in state) { keys.add(k); }
+    var state = shallowCopy(state);
 
-    var result = {};
-    keys.forEach(function (k) {
-        result[k] = update(state[k], commands[k]);
-    });
-    return result;
+    for (var k in commands) {
+        if (k == '$push') {
+            for (v in commands[k]) {
+                state.push(commands[k][v]);
+            }
+        } else if (k == '$unshift') {
+            for (v in commands[k]) {
+                state.unshift(commands[k][v]);
+            }
+        } else if (k == '$splice') {
+            for (v in commands[k]) {
+                Array.prototype.splice.apply(state, commands[k][v])
+            }
+        } else {
+            state[k] = update(state[k], commands[k]);
+        }
+    };
+
+    return state;
 }
 
 module.exports = update;
