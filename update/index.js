@@ -1,4 +1,4 @@
-function update_(state, commands) {
+function update(state, commands) {
     if (!commands) {
         return state;
     }
@@ -9,16 +9,15 @@ function update_(state, commands) {
     }
 
     // TODO: cleanup
-    keys = new Set();
+    var keys = new Set();
     for (k in commands) { keys.add(k); }
     for (k in state) { keys.add(k); }
 
-    result = {};
+    var result = {};
     keys.forEach(function (k) {
-        var newVal = update_(state[k], commands[k]);
-        result[k] = newVal;
+        result[k] = update(state[k], commands[k]);
     });
     return result;
 }
 
-module.exports = update_;
+module.exports = update;
