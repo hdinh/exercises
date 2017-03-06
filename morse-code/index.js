@@ -3,7 +3,7 @@ function transmitter(options, done) {
         if (code === '.') {
             options.toggle();
             done_();
-        } else if (c == '-') {
+        } else if (code == '-') {
             options.toggle();
             options.timeouter(function () {
                 options.toggle();
@@ -23,21 +23,21 @@ function transmitter(options, done) {
         options.timeouter(done_, 3);
     }
 
-    function typeLetter(idx, letter, done_) {
-        if (letter[idx] == ' ') {
+    function typeLetterCodes(idx, letter, done_) {
+        if (letter == ' ') {
             options.timeouter(done_, 7);
         } else {
-            var letterCodes = options.codes[letter[idx]];
+            var letterCodes = options.codes[letter];
             if (idx == letterCodes.length) {
                 done_();
             } else {
                 typeCode(letterCodes[idx], function () {
                     if (idx < letterCodes.length - 1) {
                         typeLetterCodeSpace(function() {
-                            typeLetter(idx + 1, letter, done_);
+                            typeLetterCodes(idx + 1, letter, done_);
                         });
                     } else {
-                        typeLetter(idx + 1, letter, done_);
+                        typeLetterCodes(idx + 1, letter, done_);
                     }
                 });
             }
@@ -50,7 +50,7 @@ function transmitter(options, done) {
         } else {
             var letter = options.message[idx];
             console.log(letter)
-            typeLetter(0, letter, function() {
+            typeLetterCodes(0, letter, function() {
                 if (idx < options.message.length - 1) {
                     typeLetterSpace(function() {
                         typeLetterOrSpace(idx + 1);
