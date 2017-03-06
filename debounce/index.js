@@ -1,13 +1,17 @@
 function debounced(fn, ms) {
-    var active = false;
-    return function () {
+    var active = false
+    var this_;
+    var arguments_;
+    return function (args) {
+        this_ = this;
+        arguments_ = [].slice.call(arguments);
         if (!active) {
-            active = true
+            active = true;
             setTimeout(function () {
                 try {
-                    fn();
+                    fn.apply(this_, arguments_);
                 } finally {
-                    active = false;
+                    active = false
                 }
             }, ms);
         }
