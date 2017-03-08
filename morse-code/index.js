@@ -3,64 +3,39 @@ function runIterator(iterator, done) {
         if (state.isDone()) {
             done();
         } else {
-            state.nextIterator(done);
+            runIterator(state.nextIterator, done);
         }
     });
 }
 
-var signalIterator = function (toggle, secs, options) {
-    return function (done) {
-        if (toggle) {
-            options.toggle();
-        }
-        options.timeouter(function () {
-            done({
-                isDone: function() { return true; }
-            });
-        }, secs);
-    }
+var toggleSignal = function (options, numSignals, done) {
+    options.toggle();
+    options.timeouter(function () {
+        options.toggle();
+        options.timeouter(done, 1);
+    }, numSignals);
 }
 
 var codeIterator = function (input, options) {
     var signals;
-    var numSignals = 0;
+    var numSignals;
     if (input == '-') {
         numSignals = 3;
     } else {
         numSignals = 1;
     }
-    var currentIdx = 0;
-    var it = function (done) {
-        currentIdx += 1;
-        runIterator(
-            signalIterator(true, 1, options),
-            function () {
-                done({
-                    isDone: function() { return currentIdx < numSignals; },
-                    nextIterator: it,
-                });
-            }
-        );
-    }
-    return it;
-}
 
-var codesIterator = function (input, options) {
-    var currentIdx = 0;
-    var it = function (done) {
-        var currentVal = input[currentIdx];
-        currentIdx += 1;
-        runIterator(
-            codeIterator(currentVal, options),
+    return function (done) {
+        toggleSignal(
+            options,
+            numSignals,
             function () {
                 done({
-                    isDone: function() { return currentIdx == input.length; },
-                    nextIterator: it,
+                    isDone: function() { return true; },
                 });
             }
         );
     }
-    return it;
 }
 
 var characterIterator = function (input, options) {
@@ -68,10 +43,10 @@ var characterIterator = function (input, options) {
     var currentIdx = 0;
     var it = function (done) {
         var currentVal = codes[currentIdx];
-        currentIdx += 1;
         runIterator(
-            codesIterator(currentVal, options),
+            codeIterator(currentVal, options),
             function () {
+                currentIdx += 1;
                 done({
                     isDone: function() { return currentIdx == codes.length; },
                     nextIterator: it,
@@ -86,10 +61,10 @@ var wordIterator = function (input, options) {
     var currentIdx = 0;
     var it = function (done) {
         var currentVal = input[currentIdx];
-        currentIdx += 1;
         runIterator(
             characterIterator(currentVal, options),
             function () {
+                currentIdx += 1;
                 var state = {
                     isDone: function() { return currentIdx == input.length; },
                     nextIterator: it,
@@ -100,7 +75,7 @@ var wordIterator = function (input, options) {
                 } else {
                     // write space between letters
                     runIterator(
-                        codesIterator('.', options),
+                        codeIterator('.', options),
                         function () {
                             done(state);
                         }
@@ -117,10 +92,10 @@ var sentenceIterator = function (input, options) {
     var words = input.split(' ');
     var it = function (done) {
         var currentVal = words[currentIdx];
-        currentIdx += 1;
         runIterator(
             wordIterator(currentVal, options),
             function () {
+                currentIdx += 1;
                 var state = {
                     isDone: function() { return currentIdx == input.length; },
                     nextIterator: it,
@@ -131,7 +106,7 @@ var sentenceIterator = function (input, options) {
                 } else {
                     // write space between words
                     runIterator(
-                        codesIterator('.......', options),
+                        codeIterator('.......', options),
                         function () {
                             done(state);
                         }
