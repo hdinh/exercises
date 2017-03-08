@@ -1,6 +1,6 @@
 function runIterator(iterator, done) {
-    iterator(function (state) {
-        if (state.isDone()) {
+    iterator(function (iterationEnded) {
+        if (iterationEnded) {
             done();
         } else {
             runIterator(iterator, done);
@@ -25,9 +25,7 @@ var codeIterator = function (input, options) {
             options,
             numSignals,
             function () {
-                done({
-                    isDone: function() { return true; },
-                });
+                done(true);
             }
         );
     }
@@ -42,9 +40,7 @@ var characterIterator = function (input, options) {
             codeIterator(currentVal, options),
             function () {
                 currentIdx += 1;
-                done({
-                    isDone: function() { return currentIdx == codes.length; },
-                });
+                done(currentIdx == codes.length);
             }
         );
     }
@@ -58,17 +54,14 @@ var wordIterator = function (input, options) {
             characterIterator(currentVal, options),
             function () {
                 currentIdx += 1;
-                var state = {
-                    isDone: function() { return currentIdx == input.length; },
-                    nextIterator: it,
-                }
+                var iterationEnded = currentIdx == input.length;
 
-                if (state.isDone()) {
-                    done(state);
+                if (iterationEnded) {
+                    done(iterationEnded);
                 } else {
                     // write space between letters
                     options.timeouter(function () {
-                        done(state);
+                        done(iterationEnded);
                     }, 2);
                 }
             }
@@ -85,17 +78,14 @@ var sentenceIterator = function (input, options) {
             wordIterator(currentVal, options),
             function () {
                 currentIdx += 1;
-                var state = {
-                    isDone: function() { return currentIdx == words.length; },
-                    nextIterator: it,
-                }
+                var iterationEnded = currentIdx == words.length;
 
-                if (state.isDone()) {
-                    return done(state);
+                if (iterationEnded) {
+                    done(iterationEnded);
                 } else {
                     // write space between words
                     options.timeouter(function () {
-                        done(state);
+                        done(iterationEnded);
                     }, 6);
                 }
             }
