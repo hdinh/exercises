@@ -12,19 +12,14 @@ var toggleSignal = function (options, numSignals, done) {
     options.toggle();
     options.timeouter(function () {
         options.toggle();
-        options.timeouter(done, 1);
+        options.timeouter(function () {
+            done();
+        }, 1);
     }, numSignals);
 }
 
 var codeIterator = function (input, options) {
-    var signals;
-    var numSignals;
-    if (input == '-') {
-        numSignals = 3;
-    } else {
-        numSignals = 1;
-    }
-
+    var numSignals = (input == '-') ? 3 : 1;
     return function (done) {
         toggleSignal(
             options,
@@ -74,12 +69,9 @@ var wordIterator = function (input, options) {
                     done(state);
                 } else {
                     // write space between letters
-                    runIterator(
-                        codeIterator('.', options),
-                        function () {
-                            done(state);
-                        }
-                    );
+                    options.timeouter(function () {
+                        done(state);
+                    }, 2);
                 }
             }
         );
@@ -97,7 +89,7 @@ var sentenceIterator = function (input, options) {
             function () {
                 currentIdx += 1;
                 var state = {
-                    isDone: function() { return currentIdx == input.length; },
+                    isDone: function() { return currentIdx == words.length; },
                     nextIterator: it,
                 }
 
@@ -105,12 +97,9 @@ var sentenceIterator = function (input, options) {
                     return done(state);
                 } else {
                     // write space between words
-                    runIterator(
-                        codeIterator('.......', options),
-                        function () {
-                            done(state);
-                        }
-                    );
+                    options.timeouter(function () {
+                        done(state);
+                    }, 6);
                 }
             }
         );
