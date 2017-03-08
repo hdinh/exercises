@@ -3,7 +3,7 @@ function runIterator(iterator, done) {
         if (state.isDone()) {
             done();
         } else {
-            runIterator(state.nextIterator, done);
+            runIterator(iterator, done);
         }
     });
 }
@@ -36,7 +36,7 @@ var codeIterator = function (input, options) {
 var characterIterator = function (input, options) {
     var codes = options.codes[input];
     var currentIdx = 0;
-    var it = function (done) {
+    return function (done) {
         var currentVal = codes[currentIdx];
         runIterator(
             codeIterator(currentVal, options),
@@ -44,17 +44,15 @@ var characterIterator = function (input, options) {
                 currentIdx += 1;
                 done({
                     isDone: function() { return currentIdx == codes.length; },
-                    nextIterator: it,
                 });
             }
         );
     }
-    return it;
 }
 
 var wordIterator = function (input, options) {
     var currentIdx = 0;
-    var it = function (done) {
+    return function (done) {
         var currentVal = input[currentIdx];
         runIterator(
             characterIterator(currentVal, options),
@@ -76,13 +74,12 @@ var wordIterator = function (input, options) {
             }
         );
     }
-    return it;
 }
 
 var sentenceIterator = function (input, options) {
     var currentIdx = 0;
     var words = input.split(' ');
-    var it = function (done) {
+    return function (done) {
         var currentVal = words[currentIdx];
         runIterator(
             wordIterator(currentVal, options),
@@ -104,7 +101,6 @@ var sentenceIterator = function (input, options) {
             }
         );
     }
-    return it;
 }
 
 function transmitter(options, done) {
