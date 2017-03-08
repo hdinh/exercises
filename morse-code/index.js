@@ -23,8 +23,37 @@ function registerHandler(f) {
 // iterator: letters
 // sub-handler: handler for a letters
 
-function transmitter(options, done) {
+function runIterator(iterator, done) {
+    iterator(function (state) {
+        if (state.isDone()) {
+            done();
+        } else {
+            state.nextIterator(done);
+        }
+    });
+}
 
+var SENTENCE = 0;
+
+function getHandler(input, type, options) {
+    var state = {isDone: false};
+    if (type === SENTENCE) {
+        return {
+            iterator: function () {
+                return function(doneCb) {
+                    for (var i in input) {
+                        var character = input[i];
+                    }
+                }
+            }
+        }
+    }
+}
+
+function transmitter(options, done) {
+    var handler = getHandler(options.message, SENTENCE, options);
+    var it = handler.iterator();
+    runIterator(it, done);
 }
 
 module.exports = transmitter;
