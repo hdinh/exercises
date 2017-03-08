@@ -33,31 +33,75 @@ function runIterator(iterator, done) {
     });
 }
 
-var SENTENCE = 0;
-var LETTER = 1;
-var CODE = 2;
-var SIGNAL = 3;
-
-var sentenceIterator = function (input, options, getSubIterator) {
-    var currentIdx = 0;
-    return function (cb) {
-        var currentVal = input[currentIdx];
-        currentIdx += 1;
-        runIterator(getSubIterator(currentVal), done);
+var signalIterator = function (input, options) {
+    return function (done) {
+        options.toggle();
+        options.timeouter(function () {
+            done();
+        }, 1);
     }
 }
 
-var characterIterator = function (done) {}
-var letterIterator = function (done) {}
-var codeIterator = function (done) {}
-var signalIterator = function (done) {}
+var codeIterator = function (input, options) {
+    var signals;
+    var numSignals = 0;
+    if (input == '-') {
+        numSignals = 3;
+    } else {
+        numSignals = 1;
+    }
+    var currentIdx = 0;
+    var it = function (done) {
+        currentIdx += 1;
+        runIterator(
+            signalIterator(numSignals, options),
+            function () {
+                return {
+                    isDone: function() { return currentIdx < numSignals; },
+                    nextIterator: it,
+                }
+            }
+        );
+    }
+    return it;
+}
 
-var iteratorDepths = [
-    sentenceIterator,
-    letterIterator, 
-    codeIterator,
-    signalIterator
-]
+var characterIterator = function (input, options) {
+    var codes = options.codes[input];
+    var currentIdx = 0;
+    var it = function (done) {
+        var currentVal = codes[currentIdx];
+        currentIdx += 1;
+        runIterator(
+            signalIterator(currentVal, options),
+            function () {
+                return {
+                    isDone: function() { return currentIdx == codes.length; },
+                    nextIterator: it,
+                }
+            }
+        );
+    }
+    return it;
+}
+
+var sentenceIterator = function (input, options) {
+    var currentIdx = 0;
+    var it = function (done) {
+        var currentVal = input[currentIdx];
+        currentIdx += 1;
+        runIterator(
+            characterIterator(currentVal, options),
+            function () {
+                return {
+                    isDone: function() { return currentIdx == input.length; },
+                    nextIterator: it,
+                }
+            }
+        );
+    }
+    return it;
+}
 
 function getIterator(input, depth, options) {
     var state = {isDone: false};
@@ -68,7 +112,7 @@ function getIterator(input, depth, options) {
 
 function transmitter(options, done) {
     var iterator = getIterator(options.message, SENTENCE, options);
-    runIterator(iterator, done);
+    runIterator(sentenceIterator(options.message, options), done);
 }
 
 module.exports = transmitter;
