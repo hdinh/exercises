@@ -19,38 +19,36 @@ function shallowCopy(obj) {
     assert(false);
 }
 
+var mapOps = {
+    '$set': function(obj, val) { return val; },
+    '$merge': function(obj, val) { return Object.assign(obj, val); }
+}
+
+var arrayOps = {
+    '$push': function(obj, val) { obj.push(val); },
+    '$unshift': function(obj, val) { obj.unshift(val); },
+    '$splice': function(obj, val) { Array.prototype.splice.apply(obj, val); },
+}
+
+var funcOps = {
+    '$apply': function(obj, fn) { return fn(obj); }
+}
+
 function update(state, commands) {
-    if (!commands) {
-        return state;
-    }
-
-    if (commands['$set']) {
-        return commands['$set'];
-    } else if (commands['$merge']) {
-        return Object.assign(state, commands['$merge']);
-    }
-
-    var state = shallowCopy(state);
-
-    for (var k in commands) {
-        if (k == '$push') {
-            for (v in commands[k]) {
-                state.push(commands[k][v]);
+    for (var c in commands) {
+        if (mapOps.hasOwnProperty(c)) {
+            return mapOps[c](state, commands[c]);
+        } else if (arrayOps.hasOwnProperty(c)) {
+            for (var v in commands[c]) {
+                arrayOps[c](state, commands[c][v]);
             }
-        } else if (k == '$unshift') {
-            for (v in commands[k]) {
-                state.unshift(commands[k][v]);
-            }
-        } else if (k == '$splice') {
-            for (v in commands[k]) {
-                Array.prototype.splice.apply(state, commands[k][v])
-            }
-        } else if (k == '$apply'){
-            state = commands[k](state)
+        } else if (funcOps.hasOwnProperty(c)) {
+            return funcOps[c](state, commands[c]);
         } else {
-            state[k] = update(state[k], commands[k]);
+            var state = shallowCopy(state);
+            state[c] = update(state[c], commands[c]);
         }
-    };
+    }
 
     return state;
 }
